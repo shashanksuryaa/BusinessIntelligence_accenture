@@ -1,1 +1,0 @@
-# BusinessIntelligence_accenture

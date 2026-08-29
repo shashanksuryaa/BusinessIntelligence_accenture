@@ -1,0 +1,211 @@
+business:
+
+  name: "NovaMart"
+
+  industry: "E-commerce"
+
+  currency: "INR"
+
+  timezone: "Asia/Kolkata"
+
+  simulation:
+    start_date: "2026-01-01"
+    end_date: "2026-08-31"
+    frequency: "daily"
+
+
+  regions:
+
+    North:
+      population_weight: 0.28
+      demand_multiplier: 1.00
+
+    South:
+      population_weight: 0.27
+      demand_multiplier: 1.05
+
+    West:
+      population_weight: 0.25
+      demand_multiplier: 1.10
+
+    East:
+      population_weight: 0.20
+      demand_multiplier: 0.85
+
+
+  customer_segments:
+
+    New:
+      proportion: 0.45
+
+    Returning:
+      proportion: 0.40
+
+    Premium:
+      proportion: 0.15
+
+
+  categories:
+
+    Electronics:
+      proportion: 0.25
+      average_price: 1800
+      average_cost: 1200
+
+    Fashion:
+      proportion: 0.30
+      average_price: 900
+      average_cost: 500
+
+    Grocery:
+      proportion: 0.30
+      average_price: 500
+      average_cost: 350
+
+    Home:
+      proportion: 0.15
+      average_price: 1200
+      average_cost: 750
+
+
+  customers:
+
+    initial_customers: 50000
+
+    new_customers_per_day: 250
+
+    retention:
+      base_rate: 0.62
+
+    average_orders_per_customer:
+      New: 1.0
+      Returning: 2.5
+      Premium: 4.0
+
+
+  traffic:
+
+    base_daily_sessions: 100000
+
+    conversion_rate:
+      base: 0.085
+
+      by_region:
+        North: 0.080
+        South: 0.090
+        West: 0.095
+        East: 0.070
+
+
+  orders:
+
+    average_items_per_order: 2.2
+
+    cancellation_rate: 0.03
+
+    completion_rate: 0.94
+
+
+  pricing:
+
+    discount_rate:
+      base: 0.08
+
+      by_category:
+        Electronics: 0.07
+        Fashion: 0.12
+        Grocery: 0.05
+        Home: 0.08
+
+
+  marketing:
+
+    channels:
+
+      Search:
+        budget_share: 0.30
+        base_cpc: 18
+
+      Social:
+        budget_share: 0.25
+        base_cpc: 12
+
+      Display:
+        budget_share: 0.20
+        base_cpc: 8
+
+      Email:
+        budget_share: 0.15
+        base_cpc: 4
+
+      Affiliate:
+        budget_share: 0.10
+        base_cpc: 10
+
+    daily_budget: 250000
+
+
+  inventory:
+
+    base_availability: 0.95
+
+    by_category:
+      Electronics: 0.93
+      Fashion: 0.96
+      Grocery: 0.97
+      Home: 0.94
+
+    replenishment_rate: 0.92
+
+
+  delivery:
+
+    base_delay_rate: 0.08
+
+    average_delivery_days: 3
+
+    by_region:
+      North: 0.08
+      South: 0.06
+      West: 0.07
+      East: 0.11
+
+
+  returns:
+
+    base_return_rate: 0.07
+
+    by_category:
+      Electronics: 0.05
+      Fashion: 0.12
+      Grocery: 0.03
+      Home: 0.07
+
+
+  costs:
+
+    payment_processing_rate: 0.02
+
+    logistics_cost_per_order: 75
+
+
+  seasonality:
+
+    weekly:
+      Monday: 0.95
+      Tuesday: 0.97
+      Wednesday: 1.00
+      Thursday: 1.02
+      Friday: 1.08
+      Saturday: 1.15
+      Sunday: 1.10
+
+    monthly:
+      January: 0.95
+      February: 0.97
+      March: 1.00
+      April: 0.98
+      May: 1.02
+      June: 1.00
+      July: 1.05
+      August: 1.08

@@ -1,0 +1,204 @@
+scenarios:
+
+  # ============================================================
+  # 1. MULTI-FACTOR REVENUE DECLINE
+  # ============================================================
+
+  north_logistics_disruption:
+
+    description: >
+      A temporary logistics and inventory disruption affects the North
+      region, causing lower inventory availability and increased delivery
+      delays. The disruption reduces conversion and orders, resulting in
+      a material revenue decline.
+
+    type: multi_factor
+
+    start_date: "2026-07-10"
+    end_date: "2026-07-20"
+
+    scope:
+      region:
+        - North
+
+    effects:
+
+      inventory_availability:
+        change: -0.12
+
+      delivery_delay_rate:
+        change: +0.18
+
+      conversion_rate:
+        change: -0.06
+
+    expected_path:
+
+      - inventory_availability
+      - conversion_rate
+      - orders
+      - revenue
+
+      - delivery_delay_rate
+      - orders
+      - revenue
+
+    expected_evidence:
+      strength: high
+      recurrence: true
+      segment_consistency: true
+
+
+  # ============================================================
+  # 2. MARKETING EFFECT WITH LAG
+  # ============================================================
+
+  marketing_campaign:
+
+    description: >
+      A large marketing campaign increases traffic and conversion.
+      The effect on completed orders appears with a short delay.
+
+    type: lagged_effect
+
+    start_date: "2026-07-25"
+    end_date: "2026-08-05"
+
+    scope:
+      region:
+        - South
+        - West
+
+    effects:
+
+      marketing_spend:
+        change: +0.25
+
+      conversion_rate:
+        change: +0.04
+
+    lag:
+
+      conversion_to_orders:
+        days: 2
+
+    expected_path:
+
+      - marketing_spend
+      - conversion_rate
+      - orders
+      - revenue
+
+    expected_evidence:
+      strength: medium
+      recurrence: true
+      lag_detectable: true
+
+
+  # ============================================================
+  # 3. CONFLICTING EVIDENCE
+  # ============================================================
+
+  conflicting_delivery_evidence:
+
+    description: >
+      Delivery analytics show an increase in delivery delays, while
+      operational reports and customer feedback do not show a corresponding
+      deterioration. The system should identify the contradiction rather
+      than force a single explanation.
+
+    type: conflicting_evidence
+
+    start_date: "2026-08-06"
+    end_date: "2026-08-12"
+
+    scope:
+      region:
+        - East
+
+    effects:
+
+      delivery_delay_rate:
+        change: +0.12
+
+    unstructured_evidence:
+
+      operations_reports:
+        signal: normal
+        strength: medium
+
+      customer_reviews:
+        signal: normal
+        strength: medium
+
+    expected_behavior:
+      action: abstain_or_flag_conflict
+      confidence: low
+
+
+  # ============================================================
+  # 4. NEW PRODUCT / SPARSE HISTORY
+  # ============================================================
+
+  new_product_launch:
+
+    description: >
+      A new product category is launched with very limited historical data.
+      The system should calculate current performance but avoid making strong
+      historical claims because insufficient history exists.
+
+    type: sparse_history
+
+    start_date: "2026-08-01"
+    end_date: "2026-08-31"
+
+    scope:
+      category:
+        - Smart_Home
+
+    effects:
+
+      traffic:
+        change: +0.20
+
+      conversion_rate:
+        change: +0.02
+
+    history:
+
+      available_history_days: 21
+
+    expected_behavior:
+      historical_validation: insufficient
+      action: abstain_from_strong_historical_claim
+      confidence: low
+
+
+  # ============================================================
+  # 5. NORMAL SEASONAL MOVEMENT
+  # ============================================================
+
+  seasonal_revenue_change:
+
+    description: >
+      Revenue changes because of a recurring seasonal pattern. The movement
+      should not trigger an aggressive root-cause investigation.
+
+    type: normal_variation
+
+    start_date: "2026-08-15"
+    end_date: "2026-08-31"
+
+    scope:
+      region:
+        - all
+
+    effects:
+
+      seasonality:
+        multiplier: 1.08
+
+    expected_behavior:
+      anomaly_detection: false
+      explanation_required: false
+      action: no_alert
