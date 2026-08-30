@@ -5,7 +5,7 @@
 **Team Kachow · IIT (BHU), Varanasi**
 
 ---
-##Dependencies
+**Dependencies**
 pandas          → DataFrames, Parquet processing, KPI calculations
 numpy           → numerical operations
 pyarrow         → reading/writing .parquet files
