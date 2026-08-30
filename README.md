@@ -15,7 +15,7 @@ pyarrow         → reading/writing .parquet files
 
 scipy           → statistical calculations
 
-scikit-learn    → ML/statistical utilities if used in the pipeline
+scikit-learn    → ML/statistical utilities used in the pipeline
 
 openai          → optional LLM integration
 
