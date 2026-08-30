@@ -1,0 +1,728 @@
+kpis:
+
+  revenue:
+    name: Revenue
+
+    definition: >
+      Net realized sales generated from successfully completed orders,
+      after discounts and returns.
+
+    formula:
+      expression: "SUM(net_order_value)"
+      aggregation: sum
+
+    role:
+      type: outcome
+      drives:
+        - business_performance
+
+    drivers:
+      - orders
+      - average_order_value
+      - discount_rate
+      - return_rate
+
+    source:
+      system: sales
+      table: orders
+      refresh_cadence: hourly
+
+    grain:
+      base: order
+      reporting: [day, region, category, customer_segment]
+
+    dimensions:
+      - region
+      - category
+      - customer_segment
+
+    materiality:
+      relative_change_threshold: 0.05
+
+    lineage:
+      inputs:
+        - quantity
+        - price
+        - discount
+        - return_amount
+      transformation:
+        - calculate_net_order_value
+        - aggregate_by_reporting_dimension
+
+    access:
+      executive:
+        regions: all
+      regional_manager:
+        regions: assigned
+      analyst:
+        regions: all
+
+
+  orders:
+    name: Orders
+
+    definition: >
+      Number of successfully completed orders during the selected period.
+
+    formula:
+      expression: "COUNT(DISTINCT order_id)"
+      filter: "order_status = 'completed'"
+      aggregation: count_distinct
+
+    role:
+      type: driver
+      drives:
+        - revenue
+
+    drivers:
+      - conversion_rate
+      - inventory_availability
+      - delivery_delay_rate
+
+    source:
+      system: sales
+      table: orders
+      refresh_cadence: hourly
+
+    grain:
+      base: order
+      reporting: [day, region, category, customer_segment]
+
+    dimensions:
+      - region
+      - category
+      - customer_segment
+
+    materiality:
+      relative_change_threshold: 0.05
+
+    lineage:
+      inputs:
+        - order_id
+        - order_status
+      dimensions:
+        - timestamp
+        - region
+        - category
+      transformation:
+        - filter_completed_orders
+        - count_distinct_orders
+        - aggregate_by_reporting_dimension
+
+    access:
+      executive:
+        regions: all
+      regional_manager:
+        regions: assigned
+      analyst:
+        regions: all
+
+  average_order_value:
+    name: Average Order Value
+
+    definition: >
+      Average net revenue generated per successfully completed order.
+
+    formula:
+      expression: "SUM(net_order_value) / COUNT(DISTINCT order_id)"
+      aggregation: ratio
+
+    role:
+      type: driver
+      drives:
+        - revenue
+
+    drivers:
+      - price
+      - discount_rate
+      - product_mix
+
+    source:
+      system: sales
+      table: orders
+      refresh_cadence: hourly
+
+    grain:
+      base: order
+      reporting: [day, region, category, customer_segment]
+
+    dimensions:
+      - region
+      - category
+      - customer_segment
+
+    materiality:
+      relative_change_threshold: 0.05
+
+    lineage:
+      inputs:
+        - net_order_value
+        - order_id
+      transformation:
+        - calculate_net_order_value
+        - sum_net_order_value
+        - count_distinct_completed_orders
+        - divide_revenue_by_orders
+
+    access:
+      executive:
+        regions: all
+      regional_manager:
+        regions: assigned
+      analyst:
+        regions: all
+
+  conversion_rate:
+    name: Conversion Rate
+
+    definition: >
+      Percentage of unique visitors or sessions that result in a
+      successfully completed order during the selected period.
+
+    formula:
+      expression: "completed_orders / unique_sessions * 100"
+      aggregation: ratio
+
+    role:
+      type: driver
+      drives:
+        - orders
+
+    drivers:
+      - marketing_spend
+      - inventory_availability
+      - average_order_value
+      - delivery_delay_rate
+
+    source:
+      system: sales_and_marketing
+      table: web_sessions
+      refresh_cadence: hourly
+
+    grain:
+      base: session
+      reporting: [day, region, category, customer_segment]
+
+    dimensions:
+      - region
+      - category
+      - customer_segment
+
+    materiality:
+      relative_change_threshold: 0.05
+
+    lineage:
+      inputs:
+        - session_id
+        - order_id
+        - order_status
+        - timestamp
+        - region
+
+      transformation:
+        - count_unique_sessions
+        - identify_completed_orders
+        - calculate_conversion_rate
+        - aggregate_by_reporting_dimension
+
+    access:
+      executive:
+        regions: all
+      regional_manager:
+        regions: assigned
+      analyst:
+        regions: all
+
+  marketing_spend:
+    name: Marketing Spend
+
+    definition: >
+      Total expenditure on marketing campaigns during the selected period.
+
+    formula:
+      expression: "SUM(spend)"
+      aggregation: sum
+
+    role:
+      type: driver
+      drives:
+        - conversion_rate
+
+    drivers:
+      - campaign_budget
+      - campaign_mix
+      - promotional_activity
+
+    source:
+      system: marketing
+      table: campaigns
+      refresh_cadence: daily
+
+    grain:
+      base: campaign_day_region
+      reporting: [day, region, campaign, channel]
+
+    dimensions:
+      - region
+      - campaign
+      - channel
+
+    materiality:
+      relative_change_threshold: 0.05
+
+    lineage:
+      inputs:
+        - campaign_id
+        - date
+        - region
+        - channel
+        - spend
+
+      transformation:
+        - aggregate_campaign_spend
+        - aggregate_by_reporting_dimension
+
+    access:
+      executive:
+        regions: all
+      regional_manager:
+        regions: assigned
+      analyst:
+        regions: all
+
+  inventory_availability:
+    name: Inventory Availability
+
+    definition: >
+      Percentage of customer-demanded products that are available
+      for purchase during the selected period.
+
+    formula:
+      expression: "available_product_units / demanded_product_units * 100"
+      aggregation: ratio
+
+    role:
+      type: driver
+      drives:
+        - orders
+
+    drivers:
+      - inventory_level
+      - replenishment_rate
+      - demand_forecast_accuracy
+      - supply_disruptions
+
+    source:
+      system: operations
+      table: inventory
+      refresh_cadence: daily
+
+    grain:
+      base: product_day_region
+      reporting: [day, region, category, product]
+
+    dimensions:
+      - region
+      - category
+      - product
+      - warehouse
+
+    materiality:
+      relative_change_threshold: 0.05
+
+    lineage:
+      inputs:
+        - product_id
+        - region
+        - warehouse
+        - available_units
+        - demanded_units
+        - date
+
+      transformation:
+        - calculate_product_availability
+        - aggregate_by_reporting_dimension
+
+    access:
+      executive:
+        regions: all
+      regional_manager:
+        regions: assigned
+      analyst:
+        regions: all
+
+  delivery_delay_rate:
+    name: Delivery Delay Rate
+
+    definition: >
+      Percentage of successfully delivered orders that were delivered
+      later than the promised delivery time.
+
+    formula:
+      expression: "delayed_deliveries / total_deliveries * 100"
+      aggregation: ratio
+
+    role:
+      type: driver
+      drives:
+        - orders
+        - customer_retention_rate
+
+    drivers:
+      - warehouse_capacity
+      - delivery_volume
+      - logistics_disruptions
+      - inventory_availability
+
+    source:
+      system: operations
+      table: deliveries
+      refresh_cadence: daily
+
+    grain:
+      base: delivery
+      reporting: [day, region, warehouse, carrier]
+
+    dimensions:
+      - region
+      - warehouse
+      - carrier
+
+    materiality:
+      relative_change_threshold: 0.05
+
+    lineage:
+      inputs:
+        - order_id
+        - promised_delivery_time
+        - actual_delivery_time
+        - region
+        - warehouse
+
+      transformation:
+        - identify_delayed_deliveries
+        - count_delayed_deliveries
+        - count_total_deliveries
+        - calculate_delay_rate
+        - aggregate_by_reporting_dimension
+
+    access:
+      executive:
+        regions: all
+      regional_manager:
+        regions: assigned
+      analyst:
+        regions: all
+
+
+  return_rate:
+    name: Return Rate
+
+    definition: >
+      Percentage of completed orders that are subsequently returned
+      by customers.
+
+    formula:
+      expression: "returned_orders / completed_orders * 100"
+      aggregation: ratio
+
+    role:
+      type: leakage
+      drives:
+        - revenue
+        - gross_margin
+        - customer_retention_rate
+
+    drivers:
+      - product_quality
+      - product_mismatch
+      - delivery_damage
+      - customer_experience
+
+    source:
+      system: sales
+      table: returns
+      refresh_cadence: daily
+
+    grain:
+      base: order
+      reporting: [day, region, category, product, customer_segment]
+
+    dimensions:
+      - region
+      - category
+      - product
+      - customer_segment
+
+    materiality:
+      relative_change_threshold: 0.05
+
+    lineage:
+      inputs:
+        - order_id
+        - return_status
+        - return_reason
+        - return_amount
+        - timestamp
+
+      transformation:
+        - identify_returned_orders
+        - count_returned_orders
+        - count_completed_orders
+        - calculate_return_rate
+        - aggregate_by_reporting_dimension
+
+    access:
+      executive:
+        regions: all
+      regional_manager:
+        regions: assigned
+      analyst:
+        regions: all
+
+
+  discount_rate:
+    name: Discount Rate
+
+    definition: >
+      Percentage of the gross selling value that is given as a discount
+      on completed orders.
+
+    formula:
+      expression: "total_discount / gross_sales * 100"
+      aggregation: ratio
+
+    role:
+      type: commercial_lever
+      drives:
+        - average_order_value
+        - gross_margin
+
+    drivers:
+      - promotional_activity
+      - campaign_strategy
+      - pricing_strategy
+      - inventory_clearance
+
+    source:
+      system: sales
+      table: orders
+      refresh_cadence: hourly
+
+    grain:
+      base: order
+      reporting: [day, region, category, product]
+
+    dimensions:
+      - region
+      - category
+      - product
+
+    materiality:
+      relative_change_threshold: 0.05
+
+    lineage:
+      inputs:
+        - quantity
+        - price
+        - discount_amount
+        - order_status
+        - timestamp
+
+      transformation:
+        - calculate_gross_sales
+        - aggregate_discount_amount
+        - calculate_discount_rate
+        - aggregate_by_reporting_dimension
+
+    access:
+      executive:
+        regions: all
+      regional_manager:
+        regions: assigned
+      analyst:
+        regions: all
+
+
+  gross_margin:
+    name: Gross Margin
+
+    definition: >
+      Percentage of net revenue remaining after deducting the direct
+      costs associated with the products sold.
+
+    formula:
+      expression: "(net_revenue - cost_of_goods_sold) / net_revenue * 100"
+      aggregation: ratio
+
+    role:
+      type: outcome
+
+    drivers:
+      - average_order_value
+      - discount_rate
+      - return_rate
+      - product_mix
+      - cost_of_goods_sold
+
+    source:
+      system: finance
+      table: order_financials
+      refresh_cadence: daily
+
+    grain:
+      base: order
+      reporting: [day, region, category, product]
+
+    dimensions:
+      - region
+      - category
+      - product
+
+    materiality:
+      relative_change_threshold: 0.05
+
+    lineage:
+      inputs:
+        - net_revenue
+        - cost_of_goods_sold
+        - order_id
+        - timestamp
+
+      transformation:
+        - calculate_net_revenue
+        - aggregate_cost_of_goods_sold
+        - calculate_gross_margin
+        - aggregate_by_reporting_dimension
+
+    access:
+      executive:
+        regions: all
+      regional_manager:
+        regions: assigned
+      analyst:
+        regions: all
+
+
+  customer_retention_rate:
+    name: Customer Retention Rate
+
+    definition: >
+      Percentage of customers who remain active and make another purchase
+      during the defined retention period.
+
+    formula:
+      expression: "retained_customers / eligible_customers * 100"
+      aggregation: ratio
+
+    role:
+      type: driver
+      drives:
+        - future_orders
+        - future_revenue
+
+    drivers:
+      - delivery_delay_rate
+      - return_rate
+      - customer_experience
+      - product_quality
+
+    source:
+      system: customer
+      table: customer_orders
+      refresh_cadence: weekly
+
+    grain:
+      base: customer
+      reporting: [week, region, customer_segment]
+
+    dimensions:
+      - region
+      - customer_segment
+
+    materiality:
+      relative_change_threshold: 0.05
+
+    lineage:
+      inputs:
+        - customer_id
+        - order_date
+        - region
+        - customer_segment
+
+      transformation:
+        - identify_eligible_customers
+        - identify_repeat_customers
+        - calculate_retention_rate
+        - aggregate_by_reporting_dimension
+
+    access:
+      executive:
+        regions: all
+      regional_manager:
+        regions: assigned
+      analyst:
+        regions: all
+
+
+  customer_acquisition_cost:
+    name: Customer Acquisition Cost
+
+    definition: >
+      Average marketing expenditure required to acquire one new customer
+      during the selected period.
+
+    formula:
+      expression: "marketing_spend / new_customers_acquired"
+      aggregation: ratio
+
+    role:
+      type: efficiency
+      drives:
+        - marketing_efficiency
+
+    drivers:
+      - marketing_spend
+      - campaign_mix
+      - acquisition_channel
+      - conversion_rate
+
+    source:
+      system: marketing
+      table: campaigns
+      refresh_cadence: daily
+
+    grain:
+      base: campaign_day_region
+      reporting: [day, region, channel, campaign]
+
+    dimensions:
+      - region
+      - channel
+      - campaign
+
+    materiality:
+      relative_change_threshold: 0.05
+
+    lineage:
+      inputs:
+        - spend
+        - new_customer_id
+        - campaign_id
+        - date
+        - region
+
+      transformation:
+        - aggregate_marketing_spend
+        - identify_new_customers
+        - count_new_customers
+        - calculate_cac
+        - aggregate_by_reporting_dimension
+
+    access:
+      executive:
+        regions: all
+      regional_manager:
+        regions: assigned
+      analyst:
+        regions: all
