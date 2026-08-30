@@ -5,6 +5,14 @@
 **Team Kachow · IIT (BHU), Varanasi**
 
 ---
+##Dependencies
+pandas          → DataFrames, Parquet processing, KPI calculations
+numpy           → numerical operations
+pyarrow         → reading/writing .parquet files
+scipy           → statistical calculations
+scikit-learn    → ML/statistical utilities if used in the pipeline
+openai          → optional LLM integration
+python-dotenv   → loading API keys from .env
 
 ## Why we built this
 
